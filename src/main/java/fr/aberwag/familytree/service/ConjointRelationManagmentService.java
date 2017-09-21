@@ -15,6 +15,8 @@ public class ConjointRelationManagmentService {
 
 	@Autowired
 	private MembreRepository membreRepository;
+	
+	private Membre personne = null;
 
 	public Membre addConjoint(Membre membre, Membre conjoint) {
 		membre.setConjoint(conjoint);
@@ -22,42 +24,35 @@ public class ConjointRelationManagmentService {
 	}
 
 	public Membre deleteConjoint(Membre membre, Membre conjoint) {
-		membre = membreRepository.findOneByPseudo(membre.getPseudo());
-		conjoint = membreRepository.findOneByPseudo(conjoint.getPseudo());
-
-		if (membre == null || conjoint == null) {
-			throw new RuntimeException();
-		}
-
-		if (!membre.getConjoint().getPseudo().equals(conjoint.getPseudo())) {
-			throw new RuntimeException();
-		}
-		membre.setConjoint(null);
+		membreRepository
+			.findOneByPseudo(membre.getPseudo())
+				.filter(
+						m -> m.getConjoint().getPseudo().equals(conjoint.getPseudo()))
+				.ifPresent(m -> {
+					m.setConjoint(null);});
+		
 		return membreRepository.save(membre);
 	}
 
 	public Membre addConjoint(String membrePseudo, String conjointPseudo) {
-		Membre membre = membreRepository.findOneByPseudo(membrePseudo);
-		Membre conjoint = membreRepository.findOneByPseudo(conjointPseudo);
-		if (membre == null || conjoint == null) {
-			throw new RuntimeException();
-		}
-		membre.setConjoint(conjoint);
-		return membreRepository.save(membre);
+		membreRepository.findOneByPseudo(membrePseudo)
+			.map(m -> personne = m)
+			.ifPresent(m -> {
+				m.setConjoint(membreRepository.findOneByPseudo(conjointPseudo).get());
+				membreRepository.save(m);
+			});
+		return personne;
 	}
 
 	public Membre deleteConjoint(String membrePseudo, String conjointPseudo) {
-		Membre membre = membreRepository.findOneByPseudo(membrePseudo);
-		Membre conjoint = membreRepository.findOneByPseudo(conjointPseudo);
-
-		if (membre == null || conjoint == null) {
-			throw new RuntimeException();
-		}
-
-		if (!membre.getConjoint().getPseudo().equals(conjoint.getPseudo())) {
-			throw new RuntimeException();
-		}
-		membre.setConjoint(conjoint);
-		return membreRepository.save(membre);
+		personne = membreRepository.findOneByPseudo(membrePseudo).get();
+		membreRepository
+		.findOneByPseudo(conjointPseudo)
+			.filter(
+					m -> personne.getConjoint().getPseudo().equals(m.getPseudo()))
+			.ifPresent(m -> {
+				personne.setConjoint(m);
+			});
+		return membreRepository.save(personne);
 	}
 }

@@ -11,53 +11,43 @@ public class MereRelationManagmentService {
 
 	@Autowired
 	private MembreRepository membreRepository;
+	private Membre personne = null;
 
 	public Membre addMother(Membre child, Membre mother) {
-		child = membreRepository.findOneByPseudo(child.getPseudo());
-		mother = membreRepository.findOneByPseudo(mother.getPseudo());
-		if (child == null || mother == null) {
-			throw new RuntimeException();
-		}
 		child.setMere(mother);
 		return membreRepository.save(child);
 	}
 
 	public Membre deleteMother(Membre child, Membre mother) {
-		child = membreRepository.findOneByPseudo(child.getPseudo());
-		mother = membreRepository.findOneByPseudo(mother.getPseudo());
-		if (child == null || mother == null) {
-			throw new RuntimeException();
-		}
-
-		if (!child.getMere().getPseudo().equals(mother.getPseudo())) {
-			throw new RuntimeException();
-		}
-		child.setMere(null);
+		membreRepository
+		.findOneByPseudo(child.getPseudo())
+			.filter(
+					m -> m.getMere().getPseudo().equals(mother.getPseudo()))
+			.ifPresent(m -> {
+				m.setMere(null);});
+	
 		return membreRepository.save(child);
 	}
 
 	public Membre addMother(String childPseudo, String motherPseudo) {
-		Membre child = membreRepository.findOneByPseudo(childPseudo);
-		Membre mother = membreRepository.findOneByPseudo(motherPseudo);
-		if (child == null || mother == null) {
-			throw new RuntimeException();
-		}
-		child.setMere(mother);
-		return membreRepository.save(child);
+		membreRepository.findOneByPseudo(childPseudo)
+		.map(m -> personne = m)
+		.ifPresent(m -> {
+			m.setConjoint(membreRepository.findOneByPseudo(motherPseudo).get());
+			membreRepository.save(m);
+		});
+	return personne;
 	}
 
 	public Membre deleteMother(String childPseudo, String motherPseudo) {
-		Membre child = membreRepository.findOneByPseudo(childPseudo);
-		Membre mother = membreRepository.findOneByPseudo(motherPseudo);
-
-		if (child == null || mother == null) {
-			throw new RuntimeException();
-		}
-
-		if (!child.getMere().getPseudo().equals(mother.getPseudo())) {
-			throw new RuntimeException();
-		}
-		child.setMere(mother);
-		return membreRepository.save(child);
+		personne = membreRepository.findOneByPseudo(childPseudo).get();
+		membreRepository
+		.findOneByPseudo(motherPseudo)
+			.filter(
+					m -> personne.getConjoint().getPseudo().equals(m.getPseudo()))
+			.ifPresent(m -> {
+				personne.setConjoint(m);
+			});
+		return membreRepository.save(personne);
 	}
 }

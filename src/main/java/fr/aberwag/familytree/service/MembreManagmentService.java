@@ -19,35 +19,31 @@ public class MembreManagmentService {
 
 	@Autowired
 	private MembreRepository membreRepository;
+	private Membre personne;
 
 	public Membre addMembre(Membre membre) {
-		if (membreRepository.findOneByPseudo(membre.getPseudo()) != null)
-			throw new FamilyBusinessException("L'utilisateur existe déja");
+		membreRepository.findOneByPseudo(membre.getPseudo()).ifPresent(m -> {
+			throw new FamilyBusinessException("Le client existe dans la base");
+		});
 		return membreRepository.save(membre);
 	}
 
 	public Membre deleteMembre(String pseudo) {
-		// return membreRepository.save(membre);
-		Membre m = membreRepository.findOneByPseudo(pseudo);
-		if (m == null) {
-			throw new RuntimeException();
-		}
-		m.setActif(false);
-		return membreRepository.save(m);
+		membreRepository.findOneByPseudo(pseudo)
+		.map(m -> personne = m)
+		.ifPresent(m -> {
+			m.setActif(false);
+		});
+		return membreRepository.save(personne);
 	}
 
 	public Membre updateMembre(Membre membre) {
-		Membre m = membreRepository.findOneByPseudo(membre.getPseudo());
-		if (m == null) {
-			throw new RuntimeException();
-		}
-
-		m = Utils.mapper(m, membre);
-		return membreRepository.save(m);
+		return membreRepository.findOneByPseudo(membre.getPseudo()).map(m -> Utils.mapper(m, membre))
+				.map(m -> membreRepository.save(m)).get();
 	}
 
 	public Membre getMembre(String pseudo) {
-		return membreRepository.findOneByPseudo(pseudo);
+		return membreRepository.findOneByPseudo(pseudo).get();
 	}
 
 	public List<Membre> getAllActifMembre() {
